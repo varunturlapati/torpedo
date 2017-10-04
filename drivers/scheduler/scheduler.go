@@ -80,6 +80,9 @@ type Driver interface {
 
 	// Describe generates a bundle that can be used by support - logs, cores, states, etc
 	Describe(*Context) (string, error)
+
+	//Update updates components in a spec file that k8s supports updates for
+	Update(*Context) error
 }
 
 var (

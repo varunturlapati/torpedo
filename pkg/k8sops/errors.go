@@ -67,3 +67,27 @@ type ErrPVCNotReady struct {
 func (e *ErrPVCNotReady) Error() string {
 	return fmt.Sprintf("PVC %v is not ready yet. Cause: %v", e.ID, e.Cause)
 }
+
+// ErrFailedToUpdateDeployment error type for when a deployment couldn't be updated
+type ErrFailedToUpdateDeployment struct {
+	// ID is the identifier of the deployment
+	ID string
+	// Cause is the underlying cause of the error
+	Cause string
+}
+
+func (e *ErrFailedToUpdateDeployment) Error() string {
+	return fmt.Sprintf("Deployment %v couldn't be updated. Cause: %v", e.ID, e.Cause)
+}
+
+// ErrFailedToUpdateStatefulSet error type for when a statefulset couldn't be updated
+type ErrFailedToUpdateStatefulSet struct {
+	// ID is the identifier of the StatefulSet
+	ID string
+	// Cause is the underlying cause of the error
+	Cause string
+}
+
+func (e *ErrFailedToUpdateStatefulSet) Error() string {
+	return fmt.Sprintf("StatefulSet %v couldn't be updated. Cause: %v", e.ID, e.Cause)
+}

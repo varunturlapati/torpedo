@@ -251,6 +251,36 @@ func (t *torpedo) testAppTasksDown() error {
 	return nil
 }
 
+// testUpdateApp updates an app and validates the successful update
+func (t *torpedo) testUpdateApp() error {
+	taskName := fmt.Sprintf("updateapp-%v", t.instanceID)
+	logrus.Infof("[Test: %v] Scheduling new applications", taskName)
+	contexts, err := t.s.Schedule(taskName, scheduler.ScheduleOptions{})
+	if err != nil {
+		return err
+	}
+	for _, ctx := range contexts {
+		logrus.Infof("[Test: %v] Validating %v", taskName, ctx.App.Key)
+		if err := t.validateContext(ctx); err != nil {
+			return err
+		}
+	}
+	for _, ctx := range contexts {
+		if err := t.s.Update(ctx); err != nil {
+			return err
+		}
+		logrus.Infof("[Test: %v] Validating %v", taskName, ctx.App.Key)
+		if err := t.validateContext(ctx); err != nil {
+			return err
+		}
+		logrus.Infof("[Test: %v] Tearing down %v", taskName, ctx.App.Key)
+		if err := t.tearDownContext(ctx); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // testNodeReboot reboots one of the nodes on which an app is running
 func (t *torpedo) testNodeReboot(allNodes bool) error {
 	taskName := fmt.Sprintf("nodereboot-%v", t.instanceID)
@@ -606,6 +636,7 @@ func (t *torpedo) run(tests string) error {
 		"testDriverDown":        func() error { return t.testDriverDown() },
 		"testDriverDownAppDown": func() error { return t.testDriverDownAppDown() },
 		"testAppTasksDown":      func() error { return t.testAppTasksDown() },
+		"testUpdateApp":         func() error { return t.testUpdateApp() },
 	}
 
 	if tests != "" {

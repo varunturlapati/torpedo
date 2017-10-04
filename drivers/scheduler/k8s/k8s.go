@@ -22,12 +22,14 @@ import (
 	"k8s.io/client-go/pkg/api/v1"
 	apps_api "k8s.io/client-go/pkg/apis/apps/v1beta1"
 	storage_api "k8s.io/client-go/pkg/apis/storage/v1"
+	"strconv"
 )
 
 // SchedName is the name of the kubernetes scheduler driver implementation
 const (
-	SchedName      = "k8s"
-	k8sPodsRootDir = "/var/lib/kubelet/pods"
+	SchedName                 = "k8s"
+	k8sPodsRootDir            = "/var/lib/kubelet/pods"
+	torpedoLabelKeyForUpdates = "torpedo_run"
 )
 
 type k8s struct {
@@ -699,6 +701,41 @@ func (k *k8s) GetNodesForApp(ctx *scheduler.Context) ([]node.Node, error) {
 	}
 
 	return result, nil
+}
+
+func (k *k8s) Update(ctx *scheduler.Context) error {
+	for _, spec := range ctx.App.SpecList {
+		if obj, ok := spec.(*apps_api.Deployment); ok {
+			labelMap := obj.GetLabels()
+			if label, present := labelMap[torpedoLabelKeyForUpdates]; present {
+				tmp, _ := strconv.Atoi(label) //Assuming correct format
+				label = strconv.Itoa(tmp + 1)
+				labelMap[torpedoLabelKeyForUpdates] = label
+				obj.SetLabels(labelMap)
+			} else {
+				labelMap[torpedoLabelKeyForUpdates] = "1"
+				obj.SetLabels(labelMap)
+			}
+			err := k8sutils.UpdateDeployment(obj)
+			return err
+		} else if obj, ok := spec.(*apps_api.StatefulSet); ok {
+			labelMap := obj.GetLabels()
+			if label, present := labelMap[torpedoLabelKeyForUpdates]; present {
+				tmp, _ := strconv.Atoi(label) //Assuming correct format
+				label = strconv.Itoa(tmp + 1)
+				labelMap[torpedoLabelKeyForUpdates] = label
+				obj.SetLabels(labelMap)
+			} else {
+				labelMap[torpedoLabelKeyForUpdates] = "1"
+				obj.SetLabels(labelMap)
+			}
+			err := k8sutils.UpdateStatefulSet(obj)
+			return err
+		} else {
+			continue
+		}
+	}
+	return nil
 }
 
 func (k *k8s) Describe(ctx *scheduler.Context) (string, error) {
