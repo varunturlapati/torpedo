@@ -704,6 +704,7 @@ func (k *k8s) GetNodesForApp(ctx *scheduler.Context) ([]node.Node, error) {
 }
 
 func (k *k8s) Update(ctx *scheduler.Context) error {
+	k8sOps := k8s_ops.Instance()
 	for _, spec := range ctx.App.SpecList {
 		if obj, ok := spec.(*apps_api.Deployment); ok {
 			labelMap := obj.GetLabels()
@@ -716,7 +717,7 @@ func (k *k8s) Update(ctx *scheduler.Context) error {
 				labelMap[torpedoLabelKeyForUpdates] = "1"
 				obj.SetLabels(labelMap)
 			}
-			err := k8sutils.UpdateDeployment(obj)
+			err := k8sOps.UpdateDeployment(obj)
 			return err
 		} else if obj, ok := spec.(*apps_api.StatefulSet); ok {
 			labelMap := obj.GetLabels()
@@ -729,7 +730,7 @@ func (k *k8s) Update(ctx *scheduler.Context) error {
 				labelMap[torpedoLabelKeyForUpdates] = "1"
 				obj.SetLabels(labelMap)
 			}
-			err := k8sutils.UpdateStatefulSet(obj)
+			err := k8sOps.UpdateStatefulSet(obj)
 			return err
 		} else {
 			continue

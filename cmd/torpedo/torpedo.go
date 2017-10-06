@@ -274,7 +274,7 @@ func (t *torpedo) testUpdateApp() error {
 			return err
 		}
 		logrus.Infof("[Test: %v] Tearing down %v", taskName, ctx.App.Key)
-		if err := t.tearDownContext(ctx); err != nil {
+		if err := t.tearDownContext(ctx, nil); err != nil {
 			return err
 		}
 	}

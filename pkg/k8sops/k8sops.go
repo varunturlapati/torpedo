@@ -86,6 +86,8 @@ type K8sStatefulSetOps interface {
 	GetStatefulSetPods(*apps_api.StatefulSet) ([]v1.Pod, error)
 	// DescribeStatefulSet gets status of the statefulset
 	DescribeStatefulSet(string, string) (*apps_api.StatefulSetStatus, error)
+	// UpdateStatefulSet updates the status of the statefulset
+	UpdateStatefulSet(*apps_api.StatefulSet) error
 }
 
 // K8sDeploymentOps is an interface to perform k8s deployment operations
@@ -102,6 +104,8 @@ type K8sDeploymentOps interface {
 	GetDeploymentPods(*apps_api.Deployment) ([]v1.Pod, error)
 	// DescribeDeployment gets the deployment status
 	DescribeDeployment(string, string) (*apps_api.DeploymentStatus, error)
+	// UpdateDeployment updates the deployment status
+	UpdateDeployment(*apps_api.Deployment) error
 }
 
 // K8sPodOps is an interface to perform k8s pod operations
@@ -416,6 +420,20 @@ func (k *k8sOps) DescribeDeployment(depName string, depNamespace string) (*apps_
 	return &dep.Status, err
 }
 
+func (k *k8sOps) UpdateDeployment(dep *apps_api.Deployment) error {
+	if err := k.initK8sClient(); err != nil {
+		return err
+	}
+	_, err := k.appsClient().Deployments(dep.Namespace).Update(dep)
+	if err != nil {
+		return &ErrFailedToUpdateDeployment{
+			ID:    dep.Name,
+			Cause: fmt.Sprintf("Couldn't update deployment. Err: %v", err),
+		}
+	}
+	return err
+}
+
 func (k *k8sOps) ValidateDeployment(deployment *apps_api.Deployment) error {
 	t := func() (interface{}, error) {
 		if err := k.initK8sClient(); err != nil {
@@ -570,6 +588,20 @@ func (k *k8sOps) DescribeStatefulSet(ssetName string, ssetNamespace string) (*ap
 		return nil, err
 	}
 	return &sset.Status, err
+}
+
+func (k *k8sOps) UpdateStatefulSet(sset *apps_api.StatefulSet) error {
+	if err := k.initK8sClient(); err != nil {
+		return err
+	}
+	_, err := k.appsClient().StatefulSets(sset.Namespace).Update(sset)
+	if err != nil {
+		return &ErrFailedToUpdateStatefulSet{
+			ID:    sset.Name,
+			Cause: fmt.Sprintf("Couldn't update statefulset. Err: %v", err),
+		}
+	}
+	return err
 }
 
 func (k *k8sOps) ValidateStatefulSet(statefulset *apps_api.StatefulSet) error {
